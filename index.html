@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mein Vorlesungsplan an der TH Köln</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+  body {
+    margin: 0;
+    padding: 20px;
+    background: #ffe8cc;
+    color: #2c3e50;
+  }
+  h1 { text-align: center; margin-bottom: 20px; color: #A6093D; }
+  h2 { margin-top: 0; color: #A6093D; }
+
+  .panel {
+    background: #fff8f0;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 1100px;
+    margin: 0 auto 25px auto;
+  }
+
+  .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 110px;
+  }
+  .form-group label {
+    font-size: 0.85em;
+    margin-bottom: 4px;
+    font-weight: bold;
+  }
+  .form-group input, .form-group select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1em;
+  }
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    background: #A6093D;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  .btn:hover { background: #80072f; }
+  .btn.secondary { background: #95a5a6; }
+  .btn.secondary:hover { background: #7f8c8d; }
+  .btn.danger { background: #e74c3c; }
+  .btn.danger:hover { background: #c0392b; }
+
+  .error {
+    color: #c0392b;
+    margin-top: 8px;
+    font-size: 0.9em;
+    min-height: 1.2em;
+  }
+  .hint {
+    font-size: 0.85em;
+    color: #d35400;
+    margin-top: 6px;
+  }
+  .hint a, a { color: #A6093D; }
+
+  /* Erkannte Kurse Liste */
+  .course-list {
+    margin-top: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid #eee;
+    border-radius: 6px;
+  }
+  .course-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9em;
+    min-width: 700px;
+  }
+  .course-row:last-child { border-bottom: none; }
+  .course-row:nth-child(even) { background: #fafbfc; }
+  .course-row input[type="text"], .course-row input[type="time"], .course-row select {
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  .course-row .cname { flex: 2; min-width: 130px; }
+  .course-row .cgroup { width: 90px; }
+  .course-row .cday { width: 80px; }
+  .course-row .ctime { width: 90px; }
+  .course-row .croom { flex: 1; min-width: 80px; }
+  .course-row .crow-del {
+    background: none;
+    border: none;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 1.1em;
+  }
+
+  /* Einstellungen */
+  .settings-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+  }
+  .settings-block {
+    flex: 1;
+    min-width: 250px;
+  }
+  .settings-block h3 {
+    margin: 0 0 10px 0;
+    font-size: 1em;
+  }
+  .checkbox-row, .radio-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 0.95em;
+  }
+  .radio-row label { cursor: pointer; }
+  .checkbox-row label { cursor: pointer; }
+
+  .summary-box {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #2c3e50;
+    background: #ecf0f1;
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+
+  .timetable-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    overflow-x: auto;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    background: #fff8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  th, td {
+    border: 1px solid #e0e0e0;
+    text-align: left;
+    vertical-align: top;
+    padding: 4px;
+  }
+  th {
+    background: #A6093D;
+    color: white;
+    text-align: center;
+    padding: 10px;
+  }
+  .time-col {
+    width: 70px;
+    text-align: center;
+    font-size: 0.85em;
+    font-weight: bold;
+    background: #f5e3e8;
+    color: #80072f;
+  }
+  td.day-cell {
+    height: 70px;
+    min-width: 130px;
+  }
+
+  .course {
+    background: #3498db;
+    color: white;
+    border-radius: 6px;
+    padding: 6px;
+    margin: 2px 0;
+    font-size: 0.85em;
+    position: relative;
+    box-sizing: border-box;
+  }
+  .course .name { font-weight: bold; }
+  .course .room { font-style: italic; }
+  .course .time { font-size: 0.8em; opacity: 0.9; }
+  .delete-btn {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background: rgba(255,255,255,0.3);
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    padding: 0 5px;
+    line-height: 1.4;
+  }
+  .delete-btn:hover { background: rgba(255,255,255,0.6); color: #c0392b; }
+
+  .colors-0 { background: #3498db; }
+  .colors-1 { background: #e67e22; }
+  .colors-2 { background: #27ae60; }
+  .colors-3 { background: #e74c3c; }
+  .colors-4 { background: #9b59b6; }
+  .colors-5 { background: #16a085; }
+  .colors-6 { background: #8d6e63; }
+  .colors-7 { background: #f1c40f; }
+  .colors-8 { background: #c0392b; }
+  .colors-9 { background: #2c3e50; }
+</style>
+</head>
+<body>
+
+<h1>Mein Vorlesungsplan an der TH Köln</h1>
+
+<!-- ===================== PDF UPLOAD ===================== -->
+<div class="panel">
+  <h2>1. Vorlesungsplan-PDF hochladen</h2>
+  <p class="hint">Lade hier den/die Vorlesungsplan/Vorlesungspläne der TH Köln hoch, die du unter <a href="https://www.th-koeln.de/studium/bauingenieurwesen-bachelor---fuer-studierende_582.php" target="_blank" rel="noopener">th-koeln.de</a> findest. Lade dabei alle Vorlesungspläne hoch, aus denen du Module besuchen möchtest.</p>
+  <div class="form-row">
+    <div class="form-group" style="flex: 2;">
+      <label for="pdfInput">PDF-Dateien</label>
+      <input type="file" id="pdfInput" accept="application/pdf" multiple>
+    </div>
+    <div class="form-group" style="flex: 0;">
+      <button class="btn" onclick="handlePdfUpload()">Einlesen</button>
+    </div>
+  </div>
+  <div class="error" id="pdfError"></div>
+
+  <div id="extractedSection" style="display:none;">
+    <h3 style="margin-top:20px;">Erkannte Kurse — bitte ankreuzen, welche du besuchen möchtest</h3>
+    <p class="hint">Wird derselbe Kurs von mehreren Lehrenden angeboten, wird er hier als mehrere Auswahlmöglichkeiten angezeigt. Egal, wie viele Termine ein Kurs pro Woche hat oder wie viele Varianten du ankreuzt: Im Stundenplan taucht dieser Kurs trotzdem nur EINMAL pro Woche auf — der Algorithmus wählt automatisch den am besten passenden Termin aus.</p>
+    <div class="course-list" id="courseSelectionList"></div>
+
+    <details style="margin-top:15px;">
+      <summary style="cursor:pointer; font-weight:bold;">Termine im Detail anzeigen/bearbeiten (z.B. zur Korrektur falsch erkannter Werte)</summary>
+      <div class="course-list" id="extractedList" style="margin-top:10px;"></div>
+      <div class="form-row" style="margin-top:10px;">
+        <button class="btn secondary" onclick="addManualExtractedRow()">+ Zeile manuell hinzufügen</button>
+        <button class="btn danger" onclick="clearExtracted()">Liste leeren</button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- ===================== EINSTELLUNGEN ===================== -->
+<div class="panel" id="settingsPanel" style="display:none;">
+  <h2>2. Einstellungen für die Planung</h2>
+  <div class="settings-grid">
+    <div class="settings-block">
+      <h3>Tage möglichst frei halten</h3>
+      <p class="hint" style="margin-top:0;">Falls du an bestimmten Wochentagen fest verplant bist (z.B. Arbeit), kannst du diese hier ankreuzen – sie werden bevorzugt freigehalten:</p>
+      <div id="freeDaysContainer"></div>
+      <div id="freeDaysAnyContainer" style="margin-left:0;">
+        <label for="freeDaysAnyCount">Zusätzlich sollen so viele weitere Tage frei bleiben, egal welcher Wochentag: </label>
+        <select id="freeDaysAnyCount">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <p class="hint">Beispiel: Hast du keinen festen freien Tag, brauchst aber 2 Tage in der Woche frei, lasse oben alles unangekreuzt und wähle hier "2". Ist das nicht möglich, wird trotzdem ein Stundenplan mit allen ausgewählten Kursen erstellt.</p>
+    </div>
+    <div class="settings-block">
+      <h3>Planungsprinzip</h3>
+      <div class="radio-row">
+        <input type="radio" id="principleCompact" name="principle" value="compact" checked>
+        <label for="principleCompact">Möglichst wenige, aber lange Tage an der Uni</label>
+      </div>
+      <div class="radio-row">
+        <input type="radio" id="principleEven" name="principle" value="even">
+        <label for="principleEven">Möglichst gleichmäßig über die Tage verteilt</label>
+      </div>
+    </div>
+  </div>
+  <div class="form-row" style="margin-top:15px;">
+    <button class="btn" onclick="generateSchedule()">Stundenplan erstellen</button>
+  </div>
+  <div class="summary-box" id="summaryBox" style="display:none;"></div>
+  <div class="error" id="scheduleError"></div>
+</div>
+
+<!-- ===================== MANUELL HINZUFÜGEN ===================== -->
+<div class="panel">
+  <h2>3. Kurs oder Termin manuell hinzufügen</h2>
+  <p class="hint" style="margin-top:0;">Hier kannst du nicht nur fehlende Module ergänzen, sondern auch sonstige feste, wiederkehrende Termine eintragen, z.B. Arbeit, Ehrenamt, Sport oder andere wöchentliche Verpflichtungen. Diese werden bei der Stundenplanerstellung wie Kurse berücksichtigt.</p>
+  <div class="form-row">
+    <div class="form-group">
+      <label for="name">Bezeichnung</label>
+      <input type="text" id="name" placeholder="z.B. Mathe 1 oder Arbeit">
+    </div>
+    <div class="form-group">
+      <label for="day">Tag</label>
+      <select id="day">
+        <option value="0">Montag</option>
+        <option value="1">Dienstag</option>
+        <option value="2">Mittwoch</option>
+        <option value="3">Donnerstag</option>
+        <option value="4">Freitag</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="start">Startzeit</label>
+      <input type="time" id="start" value="08:00">
+    </div>
+    <div class="form-group">
+      <label for="end">Endzeit</label>
+      <input type="time" id="end" value="09:30">
+    </div>
+    <div class="form-group">
+      <label for="room">Raum</label>
+      <input type="text" id="room" placeholder="z.B. R 2.04">
+    </div>
+    <div class="form-group">
+      <button class="btn" onclick="addCourse()">Hinzufügen</button>
+    </div>
+  </div>
+  <div class="error" id="error"></div>
+</div>
+
+<!-- ===================== STUNDENPLAN ===================== -->
+<div class="form-row no-print" style="justify-content:center; margin-bottom:10px; align-items:center; gap:8px;">
+  <label for="semesterInput">Semester:</label>
+  <input type="number" id="semesterInput" min="1" style="width:60px;" oninput="onSemesterChange()">
+  <button class="btn" onclick="downloadTimetableAsPdf()">Stundenplan als PDF herunterladen</button>
+</div>
+<div class="timetable-wrapper" id="timetableWrapper">
+  <table id="timetable">
+    <caption id="semesterHeading" style="font-size:1.3em; font-weight:bold; padding:10px; text-align:center;"></caption>
+    <thead>
+      <tr>
+        <th class="time-col">Zeit</th>
+        <th>Montag</th>
+        <th>Dienstag</th>
+        <th>Mittwoch</th>
+        <th>Donnerstag</th>
+        <th>Freitag</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+const STORAGE_KEY = 'stundenplan_kurse';
+const EXTRACTED_KEY = 'stundenplan_extrahiert';
+const START_HOUR = 8;
+const END_HOUR = 20;
+const dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+const dayAbbrev = ['Mo', 'Di', 'Mi', 'Do', 'Fr'];
+
+/* ===================== STORAGE HELFER ===================== */
+
+// In manchen Kontexten (z.B. data:-URLs) ist localStorage deaktiviert.
+// In diesem Fall wird ein einfacher In-Memory-Speicher als Fallback genutzt
+// (Daten bleiben dann nur erhalten, solange die Seite geöffnet ist).
+const memoryStorage = {};
+let storageWarningShown = false;
+
+const safeStorage = {
+  getItem(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      warnNoStorage();
+      return memoryStorage[key] !== undefined ? memoryStorage[key] : null;
+    }
+  },
+  setItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      warnNoStorage();
+      memoryStorage[key] = value;
+    }
+  }
+};
+
+function warnNoStorage() {
+  if (storageWarningShown) return;
+  storageWarningShown = true;
+  const errorEl = document.getElementById('pdfError');
+  if (errorEl) {
+    errorEl.style.color = '#c0392b';
+    errorEl.textContent = 'Hinweis: Dein Browser/diese Anzeige erlaubt kein dauerhaftes Speichern (localStorage deaktiviert, z.B. weil die Seite als "data:"-URL geöffnet wurde). Die Eingaben bleiben nur erhalten, solange diese Seite geöffnet ist, und gehen beim Neuladen verloren. Öffne die Datei index.html direkt über "Datei öffnen" in Chrome/Edge/Firefox, damit die Daten gespeichert werden.';
+  }
+}
+
+function loadCourses() {
+  const data = safeStorage.getItem(STORAGE_KEY);
+  return data ? JSON.parse(data) : [];
+}
+function saveCourses(courses) {
+  safeStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
+}
+
+function loadExtracted() {
+  const data = safeStorage.getItem(EXTRACTED_KEY);
+  return data ? JSON.parse(data) : [];
+}
+function saveExtracted(list) {
+  safeStorage.setItem(EXTRACTED_KEY, JSON.stringify(list));
+}
+
+const COURSE_LANGNAMES_KEY = 'stundenplan_kurs_langnamen';
+const LECTURER_NAMES_KEY = 'stundenplan_dozenten_namen';
+
+function loadCourseLangnames() {
+  const data = safeStorage.getItem(COURSE_LANGNAMES_KEY);
+  return data ? JSON.parse(data) : {};
+}
+function saveCourseLangnames(map) {
+  safeStorage.setItem(COURSE_LANGNAMES_KEY, JSON.stringify(map));
+}
+function loadLecturerNames() {
+  const data = safeStorage.getItem(LECTURER_NAMES_KEY);
+  return data ? JSON.parse(data) : {};
+}
+function saveLecturerNames(map) {
+  safeStorage.setItem(LECTURER_NAMES_KEY, JSON.stringify(map));
+}
+
+/* ===================== ZEIT HELFER ===================== */
+
+function timeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+function overlap(a, b) {
+  if (a.day !== b.day) return false;
+  const aStart = timeToMinutes(a.start), aEnd = timeToMinutes(a.end);
+  const bStart = timeToMinutes(b.start), bEnd = timeToMinutes(b.end);
+  return aStart < bEnd && bStart < aEnd;
+}
+
+/* ===================== STUNDENPLAN ANZEIGEN ===================== */
+
+// Basisbezeichnung eines Kurses ohne den abschließenden Vorlesung/Übung-Typ
+// (z.B. "BRW V" und "BRW Ü" -> "BRW"), damit beide dieselbe Farbe erhalten.
+function courseBaseName(name) {
+  return (name || '').replace(/\s+[VÜ]\.?$/, '').trim();
+}
+
+function minutesToTime(m) {
+  const h = Math.floor(m / 60), mm = m % 60;
+  return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+function buildTimetable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  const courses = loadCourses();
+  const skip = Array.from({ length: 5 }, () => ({}));
+  const assigned = courses.map(() => false);
+
+  // Jeder eindeutigen Basisbezeichnung wird in Reihenfolge des ersten
+  // Auftretens eine eigene Farbe zugewiesen, damit unterschiedliche Kurse
+  // möglichst unterschiedliche Farben bekommen.
+  const colorMap = {};
+  let nextColor = 0;
+  courses.forEach(course => {
+    const base = courseBaseName(course.name);
+    if (!(base in colorMap)) {
+      colorMap[base] = nextColor % 10;
+      nextColor++;
+    }
+  });
+
+  function createCourseDiv(course, index) {
+    const div = document.createElement('div');
+    div.className = 'course colors-' + colorMap[courseBaseName(course.name)];
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-btn';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Kurs löschen';
+    delBtn.onclick = () => deleteCourse(index);
+    div.appendChild(delBtn);
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'name';
+    nameEl.textContent = course.name;
+    div.appendChild(nameEl);
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'time';
+    timeEl.textContent = `${course.start} - ${course.end}`;
+    div.appendChild(timeEl);
+
+    if (course.room) {
+      const roomEl = document.createElement('div');
+      roomEl.className = 'room';
+      roomEl.textContent = course.room;
+      div.appendChild(roomEl);
+    }
+    return div;
+  }
+
+  for (let block = 1; block <= 7; block++) {
+    const [blockStart, blockEnd] = DEFAULT_BLOCK_TIMES[block];
+    const tr = document.createElement('tr');
+
+    const timeTd = document.createElement('td');
+    timeTd.className = 'time-col';
+    timeTd.textContent = `${blockStart} - ${blockEnd}`;
+    tr.appendChild(timeTd);
+
+    const rangeStart = timeToMinutes(blockStart);
+
+    for (let day = 0; day < 5; day++) {
+      if (skip[day][block]) continue;
+
+      const td = document.createElement('td');
+      td.className = 'day-cell';
+
+      // Alle noch nicht platzierten Termine dieses Tages sammeln, die genau
+      // hier beginnen oder direkt an einen bereits gefundenen Termin
+      // anschließen - so können mehrere aneinander anschließende Termine
+      // dasselbe Rasterfeld teilen.
+      let group = [];
+      let rangeEnd = rangeStart;
+      let span = 1;
+
+      // Kurse aus dem Vorlesungsplan (PDF/Stundenplan-Algorithmus) belegen
+      // einen Block immer exklusiv - nur manuell hinzugefügte Termine
+      // (Punkt 3) dürfen sich ein Rasterfeld teilen, wenn sie aneinander
+      // anschließen.
+      const generatedStart = courses.find((course, index) =>
+        !assigned[index] && course.day === day && course._generated &&
+        timeToMinutes(course.start) === rangeStart
+      );
+
+      if (generatedStart) {
+        const index = courses.indexOf(generatedStart);
+        const cs = rangeStart, ce = timeToMinutes(generatedStart.end);
+        group.push({ course: generatedStart, index, cs, ce });
+        assigned[index] = true;
+        rangeEnd = ce;
+        for (let b = block; b <= 7; b++) {
+          const [, be] = DEFAULT_BLOCK_TIMES[b];
+          span = b - block + 1;
+          if (timeToMinutes(be) >= rangeEnd) break;
+        }
+      } else {
+        let changed = true;
+        while (changed) {
+          changed = false;
+          courses.forEach((course, index) => {
+            if (assigned[index] || course.day !== day || course._generated) return;
+            const cs = timeToMinutes(course.start);
+            if (cs >= rangeStart && cs < rangeEnd + 1 && cs <= rangeEnd) {
+              group.push({ course, index, cs, ce: timeToMinutes(course.end) });
+              assigned[index] = true;
+              changed = true;
+              if (timeToMinutes(course.end) > rangeEnd) rangeEnd = timeToMinutes(course.end);
+            }
+          });
+          // Spanne auf volle Blöcke runden, damit rowSpan zu den Zeilen passt
+          let newSpan = 1;
+          for (let b = block; b <= 7; b++) {
+            const [, be] = DEFAULT_BLOCK_TIMES[b];
+            newSpan = b - block + 1;
+            if (timeToMinutes(be) >= rangeEnd) break;
+          }
+          if (newSpan !== span) {
+            span = newSpan;
+            const [, lastBe] = DEFAULT_BLOCK_TIMES[Math.min(block + span - 1, 7)];
+            if (timeToMinutes(lastBe) > rangeEnd) {
+              rangeEnd = timeToMinutes(lastBe);
+              changed = true;
+            }
+          }
+        }
+      }
+
+      group.sort((a, b) => a.cs - b.cs);
+
+      if (group.length > 0) {
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.flexDirection = 'column';
+        wrapper.style.height = '100%';
+        let cursor = rangeStart;
+        group.forEach(g => {
+          if (g.cs > cursor) {
+            const gap = document.createElement('div');
+            gap.style.flex = `${g.cs - cursor} 0 0`;
+            wrapper.appendChild(gap);
+          }
+          const div = createCourseDiv(g.course, g.index);
+          div.style.flex = `${g.ce - g.cs} 0 0`;
+          div.style.minHeight = '0';
+          div.style.margin = '0';
+          div.style.overflow = 'hidden';
+          wrapper.appendChild(div);
+          cursor = g.ce;
+        });
+        if (rangeEnd > cursor) {
+          const gap = document.createElement('div');
+          gap.style.flex = `${rangeEnd - cursor} 0 0`;
+          wrapper.appendChild(gap);
+        }
+        td.appendChild(wrapper);
+      }
+
+      if (span > 1) {
+        td.rowSpan = span;
+        for (let b = block + 1; b < block + span; b++) {
+          if (b <= 7) skip[day][b] = true;
+        }
+      }
+
+      tr.appendChild(td);
+    }
+
+    tbody.appendChild(tr);
+  }
+
+  // Alle Zeilen auf die gleiche Rastergröße bringen, damit jeder
+  // Vorlesungsblock gleich groß dargestellt wird und die proportionale
+  // Aufteilung in geteilten Feldern eine definierte Höhe zur Verfügung hat.
+  const allRows = [...tbody.querySelectorAll('tr')];
+  allRows.forEach(r => { r.style.height = ''; });
+  const uniformHeight = Math.max(70, ...allRows.map(r => r.offsetHeight));
+  allRows.forEach(r => { r.style.height = uniformHeight + 'px'; });
+}
+
+function onSemesterChange() {
+  const value = document.getElementById('semesterInput').value;
+  safeStorage.setItem('semester', value);
+  updateSemesterHeading();
+}
+
+function updateSemesterHeading() {
+  const value = document.getElementById('semesterInput').value;
+  document.getElementById('semesterHeading').textContent = value ? `Vorlesungsplan für mein ${value}. Semester` : '';
+}
+
+function downloadTimetableAsPdf() {
+  const el = document.getElementById('timetable');
+  html2canvas(el, {
+    backgroundColor: '#ffffff',
+    scale: 2,
+    width: el.offsetWidth,
+    height: el.offsetHeight,
+    windowWidth: el.offsetWidth,
+    windowHeight: el.offsetHeight,
+    ignoreElements: (element) => element.classList.contains('delete-btn')
+  }).then(canvas => {
+    const { jsPDF } = window.jspdf;
+    const orientation = canvas.width > canvas.height ? 'landscape' : 'portrait';
+    const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const maxWidth = pageWidth - 2 * margin;
+    const maxHeight = pageHeight - 2 * margin;
+    const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
+    const imgWidth = canvas.width * ratio;
+    const imgHeight = canvas.height * ratio;
+    const x = (pageWidth - imgWidth) / 2;
+    const y = (pageHeight - imgHeight) / 2;
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, imgWidth, imgHeight);
+    pdf.save('Stundenplan.pdf');
+  });
+}
+
+function addCourse() {
+  const name = document.getElementById('name').value.trim();
+  const day = parseInt(document.getElementById('day').value, 10);
+  const start = document.getElementById('start').value;
+  const end = document.getElementById('end').value;
+  const room = document.getElementById('room').value.trim();
+  const errorEl = document.getElementById('error');
+  errorEl.textContent = '';
+
+  if (!name) {
+    errorEl.textContent = 'Bitte einen Kursnamen eingeben.';
+    return;
+  }
+  if (!start || !end) {
+    errorEl.textContent = 'Bitte Start- und Endzeit angeben.';
+    return;
+  }
+  if (timeToMinutes(end) <= timeToMinutes(start)) {
+    errorEl.textContent = 'Die Endzeit muss nach der Startzeit liegen.';
+    return;
+  }
+
+  const courses = loadCourses();
+  courses.push({ name, day, start, end, room });
+  saveCourses(courses);
+  buildTimetable();
+
+  document.getElementById('name').value = '';
+  document.getElementById('room').value = '';
+}
+
+function deleteCourse(index) {
+  const courses = loadCourses();
+  courses.splice(index, 1);
+  saveCourses(courses);
+  buildTimetable();
+}
+
+/* ===================== PDF EINLESEN & TABELLE ERKENNEN ===================== */
+
+const dayNameToIndex = {
+  'Montag': 0, 'Dienstag': 1, 'Mittwoch': 2, 'Donnerstag': 3, 'Freitag': 4
+};
+
+// Standard-Zeitraster der meisten Vorlesungspläne (Fallback, falls die
+// Uhrzeiten im PDF nicht zuverlässig erkannt werden können)
+const DEFAULT_BLOCK_TIMES = {
+  1: ['08:10', '09:40'],
+  2: ['09:50', '11:20'],
+  3: ['11:30', '13:00'],
+  4: ['14:00', '15:30'],
+  5: ['15:40', '17:10'],
+  6: ['17:20', '18:50'],
+  7: ['19:00', '20:30']
+};
+
+// Erkennt einen einzelnen Kurseintrag in einer Zelle, z.B. "DPB V. Br R 216"
+const CELL_ENTRY_PATTERN = /^(\S+(?:\s+\d+)?)\s+([VÜ])\.?\s*(\S+)\s+(R\s*\S+)$/;
+const CELL_ENTRY_WITH_FOOTNOTE_PATTERN = /^(\S+(?:\s+\d+)?)\s+([VÜ])\.?\s*(\S+)\s+(R\s*\S+)\s+(\d+\))$/;
+const FOOTNOTE_LINE_PATTERN = /^\d+\)$/;
+const BLOCK_NUMBER_PATTERN = /^[1-7]$/;
+const TIME_FRAGMENT_PATTERN = /^\d{1,2}[.\-]\d{1,2}-?\d{0,2}$/;
+
+function normalizeTime(raw) {
+  const cleaned = raw.replace(/-/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length !== 2) return null;
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m)) return null;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+// Zerlegt den Text einer Tageszelle in einzelne Kurs-Einträge
+function parseCellLines(cellLines) {
+  const entries = [];
+  cellLines.forEach(line => {
+    line = line.trim();
+    if (!line) return;
+
+    if (FOOTNOTE_LINE_PATTERN.test(line)) {
+      if (entries.length > 0) entries[entries.length - 1].footnote = line;
+      return;
+    }
+
+    let m = line.match(CELL_ENTRY_WITH_FOOTNOTE_PATTERN);
+    if (m) {
+      entries.push({ name: m[1], type: m[2], lecturer: m[3], room: m[4].replace(/\s+/g, ''), footnote: m[5], note: null });
+      return;
+    }
+
+    m = line.match(CELL_ENTRY_PATTERN);
+    if (m) {
+      entries.push({ name: m[1], type: m[2], lecturer: m[3], room: m[4].replace(/\s+/g, ''), footnote: null, note: null });
+      return;
+    }
+
+    if (entries.length > 0) {
+      entries[entries.length - 1].note = line;
+    }
+  });
+  return entries;
+}
+
+// Gruppiert Textbausteine einer PDF-Seite zu Zeilen anhand ihrer y-Position
+function groupItemsToLines(items) {
+  const lines = [];
+  items.forEach(item => {
+    const text = item.str.trim();
+    if (!text) return;
+    const y = item.transform[5];
+    const x = item.transform[4];
+    let line = lines.find(l => Math.abs(l.y - y) < 2);
+    if (!line) {
+      line = { y, parts: [] };
+      lines.push(line);
+    }
+    line.parts.push({ x, text });
+  });
+  lines.forEach(l => l.parts.sort((a, b) => a.x - b.x));
+  lines.sort((a, b) => b.y - a.y); // von oben nach unten
+  return lines;
+}
+
+// Erkennt die Tabelle einer Seite und liefert eine Liste von Kurseinträgen
+function parseTimetablePage(items) {
+  const lines = groupItemsToLines(items);
+
+  // Kopfzeile mit den Wochentagen finden
+  const headerLine = lines.find(line =>
+    dayNames.every(day => line.parts.some(p => p.text === day))
+  );
+  if (!headerLine) return [];
+
+  const dayX = {};
+  headerLine.parts.forEach(p => {
+    if (dayNames.includes(p.text)) dayX[p.text] = p.x;
+  });
+  const sortedDays = dayNames.slice().sort((a, b) => dayX[a] - dayX[b]);
+  const colWidth = dayX[sortedDays[1]] - dayX[sortedDays[0]];
+  const timeColEnd = dayX[sortedDays[0]] - colWidth / 2;
+
+  function columnForX(x) {
+    if (x < timeColEnd) return 'time';
+    for (let i = 0; i < sortedDays.length - 1; i++) {
+      const boundary = (dayX[sortedDays[i]] + dayX[sortedDays[i + 1]]) / 2;
+      if (x < boundary) return sortedDays[i];
+    }
+    return sortedDays[sortedDays.length - 1];
+  }
+
+  // Nur Zeilen unterhalb der Kopfzeile betrachten
+  const bodyLines = lines.filter(l => l.y < headerLine.y);
+
+  // Zeilen mit reiner Blocknummer (1-7) in der Zeitspalte markieren
+  const blockStartIndices = [];
+  bodyLines.forEach((line, idx) => {
+    const timeParts = line.parts.filter(p => columnForX(p.x) === 'time');
+    if (timeParts.length === 1 && BLOCK_NUMBER_PATTERN.test(timeParts[0].text)) {
+      blockStartIndices.push({ idx, block: parseInt(timeParts[0].text, 10) });
+    }
+  });
+
+  const found = [];
+
+  blockStartIndices.forEach((entry, i) => {
+    const startIdx = entry.idx;
+    const endIdx = (i + 1 < blockStartIndices.length) ? blockStartIndices[i + 1].idx : bodyLines.length;
+    const slice = bodyLines.slice(startIdx, endIdx);
+
+    // Uhrzeiten versuchen aus den nächsten beiden Zeitspalten-Zeilen zu lesen
+    const timeFragments = [];
+    slice.forEach(line => {
+      line.parts.forEach(p => {
+        if (columnForX(p.x) === 'time' && TIME_FRAGMENT_PATTERN.test(p.text)) {
+          timeFragments.push(p.text);
+        }
+      });
+    });
+    let start = null, end = null;
+    if (timeFragments.length >= 2) {
+      start = normalizeTime(timeFragments[0]);
+      end = normalizeTime(timeFragments[1]);
+    }
+    if (!start || !end) {
+      const fallback = DEFAULT_BLOCK_TIMES[entry.block];
+      if (fallback) { start = fallback[0]; end = fallback[1]; }
+    }
+    if (!start || !end) return;
+
+    // Pro Wochentag-Spalte alle Zeilen sammeln und Kurseinträge extrahieren
+    sortedDays.forEach(day => {
+      const cellLines = [];
+      slice.forEach(line => {
+        const text = line.parts
+          .filter(p => columnForX(p.x) === day)
+          .map(p => p.text)
+          .join(' ')
+          .trim();
+        if (text) cellLines.push(text);
+      });
+
+      parseCellLines(cellLines).forEach(c => {
+        found.push({
+          name: `${c.name} ${c.type}`,
+          group: c.lecturer,
+          day: dayNameToIndex[day],
+          start,
+          end,
+          room: c.room + (c.note ? ` (${c.note})` : ''),
+          selected: false
+        });
+      });
+    });
+  });
+
+  return found;
+}
+
+// Liest die Legende ("Name | Langname") einer Seite aus. Liefert:
+// - courseNames: alle dort aufgeführten Kursnamen (z.B. "BRW V", "MB 1 Ü")
+// - courseLangnames: Map Kursname -> ausgeschriebener Name
+// - lecturerNames: Map Dozentenkürzel -> ausgeschriebener Name
+// Einträge ohne "V"/"Ü"-Kürzel sind Lehrende.
+const LEGEND_COURSE_PATTERN = /^(\S+(?:\s+\d+)?\s+[VÜ])\.?(?:\s|$)/;
+
+function extractLegendInfo(items) {
+  const lines = groupItemsToLines(items);
+
+  const headerLine = lines.find(line =>
+    line.parts.some(p => p.text.trim() === 'Name') &&
+    line.parts.some(p => p.text.trim() === 'Langname')
+  );
+  if (!headerLine) return { courseNames: [], courseLangnames: {}, lecturerNames: {} };
+
+  const legendLines = lines.filter(l => l.y < headerLine.y);
+
+  const courseNames = [];
+  const courseLangnames = {};
+  const lecturerNames = {};
+
+  legendLines.forEach(line => {
+    const text = line.parts.map(p => p.text).join(' ').trim();
+    if (!text) return;
+    const m = text.match(LEGEND_COURSE_PATTERN);
+    if (m) {
+      // "V" -> "V", "Ü" -> "Ü"; Modulcode ggf. mit Nummer (z.B. "MB 1")
+      const name = m[1].replace(/\s+/g, ' ');
+      const langname = text.slice(m[0].length).trim();
+      courseNames.push(name);
+      if (langname) courseLangnames[name] = langname;
+    } else {
+      const abbrev = (line.parts[0] || {}).text?.trim();
+      const fullname = line.parts.slice(1).map(p => p.text).join(' ').trim();
+      if (abbrev && fullname) lecturerNames[abbrev] = fullname;
+    }
+  });
+
+  return { courseNames, courseLangnames, lecturerNames };
+}
+
+function dedupeFound(list) {
+  const seen = new Set();
+  const result = [];
+  list.forEach(c => {
+    const key = `${c.name}|${c.group || ''}|${c.day}|${c.start}|${c.end}|${c.room}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    result.push(c);
+  });
+  return result;
+}
+
+async function handlePdfUpload() {
+  const input = document.getElementById('pdfInput');
+  const errorEl = document.getElementById('pdfError');
+  errorEl.style.color = '#c0392b';
+  errorEl.textContent = 'Lese PDF(s) ein …';
+
+  if (!input.files || input.files.length === 0) {
+    errorEl.textContent = 'Bitte mindestens eine PDF-Datei auswählen.';
+    return;
+  }
+  if (!window.pdfjsLib) {
+    errorEl.textContent = 'PDF-Bibliothek (pdf.js) konnte nicht geladen werden. Bitte Internetverbindung prüfen (pdf.js wird von einem CDN geladen) und Seite neu laden.';
+    return;
+  }
+
+  let allFound = [];
+  let legendCourses = new Set();
+  let courseLangnames = loadCourseLangnames();
+  let lecturerNames = loadLecturerNames();
+  for (const file of input.files) {
+    try {
+      const buffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        allFound.push(...parseTimetablePage(content.items));
+        const legendInfo = extractLegendInfo(content.items);
+        legendInfo.courseNames.forEach(name => legendCourses.add(name));
+        Object.assign(courseLangnames, legendInfo.courseLangnames);
+        Object.assign(lecturerNames, legendInfo.lecturerNames);
+      }
+    } catch (e) {
+      console.error(e);
+      errorEl.textContent = `Fehler beim Einlesen von "${file.name}": ${e.message || e}`;
+      return;
+    }
+  }
+
+  saveCourseLangnames(courseLangnames);
+  saveLecturerNames(lecturerNames);
+
+  errorEl.style.color = '#2c3e50';
+
+  allFound = dedupeFound(allFound);
+
+  const foundNames = new Set(allFound.map(c => c.name));
+  const missingCourses = [...legendCourses].filter(name => !foundNames.has(name));
+
+  if (allFound.length === 0) {
+    errorEl.style.color = '#c0392b';
+    errorEl.textContent = 'Es konnten keine Kurse automatisch erkannt werden (Tabellenstruktur nicht erkannt). Bitte füge Kurse manuell zur Liste hinzu.';
+  } else {
+    let msg = `${allFound.length} Kurs(e) erkannt.`;
+    if (missingCourses.length > 0) {
+      msg += ` Achtung: laut Legende im PDF fehlen folgende Kurse: ${missingCourses.join(', ')}. Bitte ggf. manuell ergänzen.`;
+      errorEl.style.color = '#c0392b';
+    }
+    errorEl.textContent = msg;
+  }
+
+  document.getElementById('extractedSection').style.display = 'block';
+  document.getElementById('settingsPanel').style.display = 'block';
+
+  try {
+    let existing = loadExtracted();
+    if (!Array.isArray(existing)) existing = [];
+    saveExtracted(dedupeFound(existing.concat(allFound)));
+    renderAll();
+    renderFreeDays();
+  } catch (e) {
+    console.error(e);
+    errorEl.style.color = '#c0392b';
+    errorEl.textContent = `Fehler bei der Anzeige der erkannten Kurse: ${e.message}. Versuche, "Liste leeren" zu klicken und das PDF erneut hochzuladen.`;
+  }
+}
+
+/* ===================== ERKANNTE KURSE ANZEIGEN/BEARBEITEN ===================== */
+
+function renderExtractedList() {
+  const list = loadExtracted();
+  const container = document.getElementById('extractedList');
+  container.innerHTML = '';
+
+  list.forEach((item, index) => {
+    const row = document.createElement('div');
+    row.className = 'course-row';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = !!item.selected;
+    checkbox.onchange = () => updateExtracted(index, 'selected', checkbox.checked);
+    row.appendChild(checkbox);
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'cname';
+    nameInput.value = item.name;
+    nameInput.onchange = () => updateExtracted(index, 'name', nameInput.value);
+    row.appendChild(nameInput);
+
+    const groupInput = document.createElement('input');
+    groupInput.type = 'text';
+    groupInput.className = 'cgroup';
+    groupInput.value = item.group || '';
+    groupInput.placeholder = 'Gruppe/Dozent';
+    groupInput.title = 'Gruppe/Dozent — alle Termine mit gleichem Kursnamen UND gleicher Gruppe gehören zusammen und werden gemeinsam eingeplant. Bei mehreren Gruppen wählt der Algorithmus eine davon aus.';
+    groupInput.onchange = () => updateExtracted(index, 'group', groupInput.value);
+    row.appendChild(groupInput);
+
+    const daySelect = document.createElement('select');
+    daySelect.className = 'cday';
+    dayNames.forEach((d, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = d;
+      if (item.day === i) opt.selected = true;
+      daySelect.appendChild(opt);
+    });
+    daySelect.onchange = () => updateExtracted(index, 'day', parseInt(daySelect.value, 10));
+    row.appendChild(daySelect);
+
+    const startInput = document.createElement('input');
+    startInput.type = 'time';
+    startInput.className = 'ctime';
+    startInput.value = item.start;
+    startInput.onchange = () => updateExtracted(index, 'start', startInput.value);
+    row.appendChild(startInput);
+
+    const sep = document.createElement('span');
+    sep.textContent = '–';
+    row.appendChild(sep);
+
+    const endInput = document.createElement('input');
+    endInput.type = 'time';
+    endInput.className = 'ctime';
+    endInput.value = item.end;
+    endInput.onchange = () => updateExtracted(index, 'end', endInput.value);
+    row.appendChild(endInput);
+
+    const roomInput = document.createElement('input');
+    roomInput.type = 'text';
+    roomInput.className = 'croom';
+    roomInput.value = item.room || '';
+    roomInput.placeholder = 'Raum';
+    roomInput.onchange = () => updateExtracted(index, 'room', roomInput.value);
+    row.appendChild(roomInput);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'crow-del';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Zeile entfernen';
+    delBtn.onclick = () => removeExtractedRow(index);
+    row.appendChild(delBtn);
+
+    container.appendChild(row);
+  });
+
+  if (list.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'course-row';
+    empty.textContent = 'Noch keine Kurse erkannt. Lade ein PDF hoch oder füge eine Zeile manuell hinzu.';
+    container.appendChild(empty);
+  }
+}
+
+function updateExtracted(index, field, value) {
+  const list = loadExtracted();
+  if (!list[index]) return;
+  list[index][field] = value;
+  saveExtracted(list);
+  renderCourseSelection();
+}
+
+function removeExtractedRow(index) {
+  const list = loadExtracted();
+  list.splice(index, 1);
+  saveExtracted(list);
+  renderAll();
+}
+
+function addManualExtractedRow() {
+  const list = loadExtracted();
+  list.push({ name: 'Neuer Kurs', group: '', day: 0, start: '08:00', end: '09:30', room: '', selected: false });
+  saveExtracted(list);
+  renderAll();
+  document.getElementById('extractedSection').style.display = 'block';
+  document.getElementById('settingsPanel').style.display = 'block';
+  renderFreeDays();
+}
+
+function clearExtracted() {
+  if (!confirm('Wirklich die gesamte Liste der erkannten Kurse löschen?')) return;
+  saveExtracted([]);
+  renderAll();
+}
+
+function renderAll() {
+  renderCourseSelection();
+  renderExtractedList();
+}
+
+/* ===================== KURSAUSWAHL (vereinfachte Liste) ===================== */
+
+// Gruppiert die erkannten Termine nach Kursname + Gruppe/Dozent und zeigt
+// jeden Kurs nur einmal als Checkbox an (unabhängig davon, wie oft er pro
+// Woche stattfindet).
+function renderCourseSelection() {
+  const list = loadExtracted();
+  const container = document.getElementById('courseSelectionList');
+  container.innerHTML = '';
+
+  const courseLangnames = loadCourseLangnames();
+  const lecturerNames = loadLecturerNames();
+
+  const courseMap = new Map();
+  list.forEach((item, index) => {
+    const key = `${item.name}|${item.group || ''}`;
+    if (!courseMap.has(key)) {
+      courseMap.set(key, { name: item.name, group: item.group || '', indices: [], selected: !!item.selected });
+    }
+    const entry = courseMap.get(key);
+    entry.indices.push(index);
+    if (item.selected) entry.selected = true;
+  });
+
+  courseMap.forEach(course => {
+    const row = document.createElement('div');
+    row.className = 'course-row';
+    row.style.minWidth = '0';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = course.selected;
+    checkbox.onchange = () => {
+      const fullList = loadExtracted();
+      course.indices.forEach(i => { fullList[i].selected = checkbox.checked; });
+      saveExtracted(fullList);
+    };
+    row.appendChild(checkbox);
+
+    const label = document.createElement('span');
+    label.style.fontWeight = 'bold';
+    label.style.flex = '2';
+    const langname = courseLangnames[course.name];
+    label.textContent = course.name + (langname ? ` – ${langname}` : '');
+    row.appendChild(label);
+
+    if (course.group) {
+      const lecturer = document.createElement('span');
+      lecturer.style.color = '#7f8c8d';
+      lecturer.style.flex = '1';
+      const lecturerFullname = lecturerNames[course.group];
+      lecturer.textContent = lecturerFullname ? `${lecturerFullname} (${course.group})` : course.group;
+      row.appendChild(lecturer);
+    }
+
+    const info = document.createElement('span');
+    info.style.color = '#7f8c8d';
+    info.style.fontSize = '0.85em';
+    const n = course.indices.length;
+    info.textContent = n === 1 ? '1 Termin verfügbar' : `${n} Termine verfügbar`;
+    row.appendChild(info);
+
+    container.appendChild(row);
+  });
+
+  if (courseMap.size === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'course-row';
+    empty.textContent = 'Noch keine Kurse erkannt. Lade ein PDF hoch oder füge eine Zeile manuell hinzu.';
+    container.appendChild(empty);
+  }
+}
+
+/* ===================== EINSTELLUNGEN: FREIE TAGE ===================== */
+
+const FREE_DAYS_KEY = 'stundenplan_freie_tage';
+
+const FREE_DAYS_COUNT_KEY = 'stundenplan_freie_tage_anzahl';
+
+function loadFreeDays() {
+  const data = safeStorage.getItem(FREE_DAYS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+function saveFreeDays(days) {
+  safeStorage.setItem(FREE_DAYS_KEY, JSON.stringify(days));
+}
+
+function loadFreeDaysMode() {
+  return safeStorage.getItem(FREE_DAYS_MODE_KEY) || 'specific';
+}
+function saveFreeDaysMode(mode) {
+  safeStorage.setItem(FREE_DAYS_MODE_KEY, mode);
+}
+
+function loadFreeDaysCount() {
+  return parseInt(safeStorage.getItem(FREE_DAYS_COUNT_KEY) || '0', 10);
+}
+function saveFreeDaysCount(count) {
+  safeStorage.setItem(FREE_DAYS_COUNT_KEY, String(count));
+}
+
+function setupFreeDaysMode() {
+  document.getElementById('freeDaysAnyCount').value = String(loadFreeDaysCount());
+  document.getElementById('freeDaysAnyCount').addEventListener('change', (e) => {
+    saveFreeDaysCount(parseInt(e.target.value, 10));
+  });
+}
+
+function renderFreeDays() {
+  const container = document.getElementById('freeDaysContainer');
+  container.innerHTML = '';
+  const freeDays = loadFreeDays();
+
+  dayNames.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'checkbox-row';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = 'freeDay' + i;
+    cb.checked = freeDays.includes(i);
+    cb.onchange = () => {
+      let fd = loadFreeDays();
+      if (cb.checked) {
+        if (!fd.includes(i)) fd.push(i);
+      } else {
+        fd = fd.filter(x => x !== i);
+      }
+      saveFreeDays(fd);
+    };
+    row.appendChild(cb);
+
+    const label = document.createElement('label');
+    label.htmlFor = 'freeDay' + i;
+    label.textContent = d;
+    row.appendChild(label);
+
+    container.appendChild(row);
+  });
+}
+
+const PRINCIPLE_KEY = 'stundenplan_prinzip';
+
+function loadPrinciple() {
+  return safeStorage.getItem(PRINCIPLE_KEY) || 'compact';
+}
+function savePrinciple(p) {
+  safeStorage.setItem(PRINCIPLE_KEY, p);
+}
+
+function setupPrincipleRadios() {
+  const principle = loadPrinciple();
+  document.getElementById('principleCompact').checked = principle === 'compact';
+  document.getElementById('principleEven').checked = principle === 'even';
+
+  document.querySelectorAll('input[name="principle"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.checked) savePrinciple(radio.value);
+    });
+  });
+}
+
+/* ===================== STUNDENPLAN-OPTIMIERUNG ===================== */
+
+function generateSchedule(allowMinimal) {
+  allowMinimal = !!allowMinimal;
+  const extracted = loadExtracted();
+  const selected = extracted.filter(c => c.selected);
+  const errorEl = document.getElementById('scheduleError');
+  errorEl.textContent = '';
+  errorEl.innerHTML = '';
+
+  if (selected.length === 0) {
+    errorEl.textContent = 'Bitte mindestens einen Kurs aus der erkannten Liste auswählen.';
+    return;
+  }
+
+  // Nach Kursname gruppieren; jeder verfügbare Termin ist eine eigene
+  // "Option". Der Algorithmus wählt pro Kurs genau EINEN Termin aus,
+  // sodass jeder Kurs nur einmal pro Woche im Stundenplan auftaucht.
+  const courseMap = {};
+  selected.forEach(c => {
+    const courseKey = c.name;
+    if (!courseMap[courseKey]) courseMap[courseKey] = [];
+    courseMap[courseKey].push({ name: c.name, group: c.group, day: c.day, start: c.start, end: c.end, room: c.room });
+  });
+  const optionLists = Object.values(courseMap).map(sessions => sessions.map(s => [s]));
+
+  const freeDays = loadFreeDays();
+  const freeDaysCount = loadFreeDaysCount();
+  const principle = loadPrinciple();
+
+  // Backtracking über alle Kombinationsmöglichkeiten (mit Limit)
+  const MAX_RESULTS = 20000;
+  let results = [];
+
+  function backtrack(idx, current) {
+    if (results.length >= MAX_RESULTS) return;
+    if (idx === optionLists.length) {
+      results.push(current.slice());
+      return;
+    }
+    for (const option of optionLists[idx]) {
+      const conflict = option.some(session => current.some(c => overlap(c, session)))
+        || option.some((a, i) => option.some((b, j) => i < j && overlap(a, b)));
+      if (conflict) continue;
+      current.push(...option);
+      backtrack(idx + 1, current);
+      current.length -= option.length;
+      if (results.length >= MAX_RESULTS) return;
+    }
+  }
+  backtrack(0, []);
+
+  if (results.length === 0) {
+    errorEl.textContent = 'Es konnte kein überschneidungsfreier Stundenplan aus den ausgewählten Kursen erstellt werden. Bitte prüfe Überschneidungen oder wähle alternative Termine.';
+    return;
+  }
+
+  // Bewertung jeder Kombination
+  function score(combo) {
+    const dailyMinutes = [0, 0, 0, 0, 0];
+    const dailyCount = [0, 0, 0, 0, 0];
+    const dailySpan = [0, 0, 0, 0, 0]; // span = letzte Endzeit - erste Startzeit
+    const dailyMin = [Infinity, Infinity, Infinity, Infinity, Infinity];
+    const dailyMax = [0, 0, 0, 0, 0];
+    let freeDayHits = 0;
+
+    combo.forEach(c => {
+      const s = timeToMinutes(c.start), e = timeToMinutes(c.end);
+      dailyMinutes[c.day] += (e - s);
+      dailyCount[c.day] += 1;
+      dailyMin[c.day] = Math.min(dailyMin[c.day], s);
+      dailyMax[c.day] = Math.max(dailyMax[c.day], e);
+    });
+
+    for (let d = 0; d < 5; d++) {
+      dailySpan[d] = dailyMin[d] === Infinity ? 0 : (dailyMax[d] - dailyMin[d]);
+    }
+
+    const emptyDays = dailyMinutes.map((m, d) => m === 0 ? d : -1).filter(d => d >= 0);
+    // Bei "möglichst wenig Kurse an einem freien Tag" dürfen auch nicht-leere
+    // Tage als (Kompromiss-)freier Tag zählen.
+    const minimalDays = allowMinimal
+      ? dailyMinutes.map((m, d) => m > 0 ? d : -1).filter(d => d >= 0)
+      : [];
+    const candidateFreeDays = emptyDays.concat(minimalDays);
+
+    // Bestimmte Tage (freeDays) sollen vorrangig frei sein; zusätzlich dürfen
+    // beliebig viele weitere Tage (freeDaysCount) frei gehalten werden.
+    const specificHits = candidateFreeDays.filter(d => freeDays.includes(d));
+    const otherCandidates = candidateFreeDays.filter(d => !freeDays.includes(d));
+    // Bei Kompromiss bevorzugt diejenigen mit den wenigsten Kursen wählen.
+    const sortedOther = otherCandidates.slice().sort((a, b) => dailyCount[a] - dailyCount[b]);
+    const extraHits = sortedOther.slice(0, freeDaysCount);
+
+    freeDayHits = specificHits.length + extraHits.length;
+    const usedAsFreeDays = specificHits.concat(extraHits);
+
+    // Anzahl Kurse, die an den als "frei" gewerteten Tagen trotzdem stattfinden
+    const freeDaySessionLoad = usedAsFreeDays.reduce((sum, d) => sum + dailyCount[d], 0);
+
+    const daysUsed = dailyMinutes.filter(m => m > 0).length;
+    const totalGap = dailySpan.reduce((a, b) => a + b, 0) - dailyMinutes.reduce((a, b) => a + b, 0);
+
+    let primary, secondary;
+    if (principle === 'compact') {
+      primary = daysUsed;          // wenige Tage anstreben
+      secondary = totalGap;        // wenig Lücken innerhalb der Tage
+    } else {
+      const usedMinutes = dailyMinutes.filter((m, d) => !usedAsFreeDays.includes(d));
+      const mean = usedMinutes.reduce((a, b) => a + b, 0) / usedMinutes.length;
+      primary = usedMinutes.reduce((a, b) => a + (b - mean) * (b - mean), 0); // Varianz
+      secondary = totalGap;
+    }
+
+    const target = freeDays.length + freeDaysCount;
+    const freeDayShortfall = allowMinimal ? 0 : Math.max(0, target - freeDayHits);
+
+    return {
+      score: freeDayShortfall * 1e9 + freeDaySessionLoad * 1e6 + primary * 1000 + secondary,
+      freeDayHits, freeDayShortfall, freeDaySessionLoad, target, daysUsed, dailyMinutes
+    };
+  }
+
+  let best = null;
+  results.forEach(combo => {
+    const s = score(combo);
+    if (!best || s.score < best.s.score) {
+      best = { combo, s };
+    }
+  });
+
+  errorEl.innerHTML = '';
+
+  // Falls die gewünschten freien Tage nicht erreichbar sind: erst die Frage
+  // mit den Alternativen anzeigen, ohne den Stundenplan zu übernehmen.
+  // Der Stundenplan wird erst nach der Entscheidung des Nutzers erstellt.
+  if (best.s.freeDayShortfall > 0) {
+    errorEl.style.color = '#c0392b';
+    errorEl.style.fontWeight = 'bold';
+
+    const msg = document.createElement('div');
+    msg.textContent = `Leider konnte kein Stundenplan mit ${best.s.target} freien Tag(en) erstellt werden – es war nur ${best.s.freeDayHits} möglich. Wie möchtest du weitermachen?`;
+    errorEl.appendChild(msg);
+
+    const btnRow = document.createElement('div');
+    btnRow.style.marginTop = '8px';
+    btnRow.style.display = 'flex';
+    btnRow.style.gap = '8px';
+    btnRow.style.flexWrap = 'wrap';
+
+    const fewerBtn = document.createElement('button');
+    fewerBtn.className = 'btn';
+    fewerBtn.textContent = `Nur mit ${Math.max(0, best.s.target - 1)} freien Tag(en) planen`;
+    fewerBtn.onclick = () => {
+      if (freeDaysCount > 0) {
+        const newCount = freeDaysCount - 1;
+        saveFreeDaysCount(newCount);
+        document.getElementById('freeDaysAnyCount').value = String(newCount);
+      } else {
+        const fd = loadFreeDays();
+        fd.pop();
+        saveFreeDays(fd);
+        renderFreeDays();
+      }
+      generateSchedule();
+    };
+    btnRow.appendChild(fewerBtn);
+
+    if (!allowMinimal && best.s.freeDayShortfall > 0) {
+      const minimalBtn = document.createElement('button');
+      minimalBtn.className = 'btn';
+      minimalBtn.textContent = 'Möglichst wenig Kurse an einem freien Tag zulassen';
+      minimalBtn.onclick = () => generateSchedule(true);
+      btnRow.appendChild(minimalBtn);
+    }
+
+    errorEl.appendChild(btnRow);
+  } else {
+    errorEl.style.fontWeight = 'normal';
+
+    // In den Stundenplan übernehmen (vorhandene manuelle Kurse bleiben erhalten,
+    // bisherige automatisch generierte Kurse werden ersetzt)
+    let courses = loadCourses().filter(c => !c._generated);
+    best.combo.forEach(c => {
+      courses.push({ name: c.name, day: c.day, start: c.start, end: c.end, room: c.room, _generated: true });
+    });
+    saveCourses(courses);
+    buildTimetable();
+
+    // Zusammenfassung anzeigen
+    const summaryBox = document.getElementById('summaryBox');
+    let summaryText = `Stundenplan erstellt mit ${best.combo.length} Kurs(en) an ${best.s.daysUsed} Tag(en).`;
+    if (best.s.target > 0 && best.s.freeDaySessionLoad === 0) {
+      summaryText += ` Die gewünschten ${best.s.target} freien Tag(e) wurden eingehalten.`;
+    } else if (best.s.target > 0 && best.s.freeDaySessionLoad > 0) {
+      summaryText += ` Es war nicht möglich, ${best.s.target} Tag(e) komplett frei zu halten – stattdessen wurden möglichst wenige Kurse (insgesamt ${best.s.freeDaySessionLoad}) an die freien Tage gelegt.`;
+    }
+    summaryBox.textContent = summaryText;
+    summaryBox.style.display = 'block';
+  }
+}
+
+/* ===================== INIT ===================== */
+
+document.getElementById('semesterInput').value = safeStorage.getItem('semester') || '';
+updateSemesterHeading();
+buildTimetable();
+renderAll();
+renderFreeDays();
+setupFreeDaysMode();
+setupPrincipleRadios();
+if (loadExtracted().length > 0) {
+  document.getElementById('extractedSection').style.display = 'block';
+  document.getElementById('settingsPanel').style.display = 'block';
+}
+</script>
+
+</body>
+</html>

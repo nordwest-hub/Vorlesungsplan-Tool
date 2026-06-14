@@ -1,0 +1,346 @@
+[
+  {
+    "page": 1,
+    "table": [
+      [
+        "",
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        ""
+      ],
+      [
+        "1\n8.1-0\n9.40",
+        "",
+        "GEO 2 V. Sf R 67\n1)",
+        "",
+        "DPB Ü Br R 12",
+        "",
+        null
+      ],
+      [
+        "2\n9.50\n11.20",
+        "MB 1 V. Nö R 216\n2)",
+        "HYD 1 V. Fe R 67\n3)",
+        "BRW Ü. Lü R 216\nBRW Ü Or R 216\n4)",
+        "HYD 1 Ü Fe R 206",
+        "VWB V. Ly R 216\nVWB V Ko R 216\n5)",
+        null
+      ],
+      [
+        "3\n11.30\n13.00",
+        "DPB V. Br R 216\n6)",
+        "BRW V. Lü R 216\nBRW V Or R 216\n7)",
+        "",
+        "",
+        "VWB V. Ly R 216\nVWB V Ko R 216\n5)",
+        null
+      ],
+      [
+        "4\n14.00\n15.30",
+        "",
+        "GEO 2 Ü Sf R 20",
+        "BRW Ü. Lü R 206\nBRW Ü Or R 206\nn. bes. Plan 8)",
+        "",
+        "VWB Ü. Ly R 207\nVWB Ü Ko R 207\nn. bes. Plan",
+        null
+      ],
+      [
+        "5\n15.40\n17.10",
+        "",
+        "",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "6\n17.20\n18.50",
+        "",
+        "MB 1 Ü Ab/ R 206",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "7\n19.00\n20.30",
+        "PW 4. ? R 20\nProjektwoche (HIP) | 9)",
+        "",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "Name Langname\nBRW V Baurecht und Bauwirtschaft Vorlesung\nBRW Ü Baurecht und Bauwirtschaft Übung",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ]
+  },
+  {
+    "page": 2,
+    "table": [
+      [
+        "",
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        ""
+      ],
+      [
+        "1\n8.10\n9.40",
+        "",
+        "GEO 2 V. Sf R 67\n1)",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "2\n9.50\n11.20",
+        "MB 1 V. Nö R 216\n2)",
+        "HYD 1 V. Fe R 67\n3)",
+        "BRW Ü. Lü R 216\nBRW Ü Or R 216\n4)",
+        "",
+        "VWB V. Ly R 216\nVWB V Ko R 216\n5)",
+        null
+      ],
+      [
+        "3\n11.30\n13.00",
+        "DPB V. Br R 216\n6)",
+        "BRW V. Lü R 216\nBRW V Or R 216\n7)",
+        "",
+        "",
+        "VWB V. Ly R 216\nVWB V Ko R 216\n5)",
+        null
+      ],
+      [
+        "4\n14.00\n15.30",
+        "MB 1 Ü Ab/ R 207",
+        "HYD 1 Ü Fe R 207",
+        "BRW Ü. Lü R 206\nBRW Ü Or R 206\nn. bes. Plan 8)",
+        "",
+        "",
+        null
+      ],
+      [
+        "5\n15.40\n17.10",
+        "",
+        "GEO 2 Ü Sf R 20",
+        "",
+        "DPB Ü Br R 12",
+        "VWB Ü. Ly R 207\nVWB Ü Ko R 207\nn. bes. Plan",
+        null
+      ],
+      [
+        "6\n17.20\n18.50",
+        "",
+        "",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "7\n19.00\n20.30",
+        "PW 4. ? R 20\nProjektwoche (HIP) | 9)",
+        "",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "Name Langname\nBRW V Baurecht und Bauwirtschaft Vorlesung\nBRW Ü Baurecht und Bauwirtschaft Übung",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ]
+  },
+  {
+    "page": 3,
+    "table": [
+      [
+        "",
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        ""
+      ],
+      [
+        "1\n8.10\n9.40",
+        "",
+        "GEO 2 V. Sf R 67\n1)",
+        "BRW Ü. Lü R 206\nBRW Ü Or R 206\nn. bes. Plan 2)",
+        "",
+        "",
+        null
+      ],
+      [
+        "2\n9.50\n11.20",
+        "MB 1 V. Nö R 216\n3)",
+        "HYD 1 V. Fe R 67\n4)",
+        "",
+        "VWB Ü R 20\nVWB Ü Ko R 20\nn. bes. Plan",
+        "VWB V. Ly R 216\nVWB V Ko R 216\n5)",
+        null
+      ],
+      [
+        "3\n11.30\n13.00",
+        "DPB V. Br R 216\n6)",
+        "BRW V. Lü R 216\nBRW V Or R 216\n7)",
+        "",
+        "HYD 1 Ü Fe R 206",
+        "VWB V. Ly R 216\nVWB V Ko R 216\n5)",
+        null
+      ],
+      [
+        "4\n14.00\n15.30",
+        "",
+        "BRW Ü. Lü R 216\nBRW Ü Or R 216\n8)",
+        "",
+        "DPB Ü Br R 12",
+        "",
+        null
+      ],
+      [
+        "5\n15.40\n17.10",
+        "GEO 2 Ü Sf R 20",
+        "MB 1 Ü Ab/ R 206",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "6\n17.20\n18.50",
+        "",
+        "",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "7\n19.00\n20.30",
+        "PW 4. ? R 20\nProjektwoche (HIP) | 9)",
+        "",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "Name Langname\nBRW V Baurecht und Bauwirtschaft Vorlesung\nBRW Ü Baurecht und Bauwirtschaft Übung",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ]
+  },
+  {
+    "page": 4,
+    "table": [
+      [
+        "",
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        ""
+      ],
+      [
+        "1\n8.10\n9.40",
+        "",
+        "GEO 2 V. Sf R 67\n1)",
+        "BRW Ü. Lü R 206\nBRW Ü Or R 206\nn. bes. Plan 2)",
+        "",
+        "",
+        null
+      ],
+      [
+        "2\n9.50\n11.20",
+        "MB 1 V. Nö R 216\n3)",
+        "HYD 1 V. Fe R 67\n4)",
+        "",
+        "DPB Ü Br R 12",
+        "VWB V. Ly R 216\nVWB V Ko R 216\n5)",
+        null
+      ],
+      [
+        "3\n11.30\n13.00",
+        "DPB V. Br R 216\n6)",
+        "BRW V. Lü R 216\nBRW V Or R 216\n7)",
+        "",
+        "VWB Ü R 20\nVWB Ü Ko R 20\nn. bes. Plan",
+        "VWB V. Ly R 216\nVWB V Ko R 216\n5)",
+        null
+      ],
+      [
+        "4\n14.00\n15.30",
+        "GEO 2 Ü Sf R 20",
+        "BRW Ü. Lü R 216\nBRW Ü Or R 216\n8)",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "5\n15.40\n17.10",
+        "MB 1 Ü Ab/ R 207",
+        "HYD 1 Ü Fe R 207",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "6\n17.20\n18.50",
+        "",
+        "",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "7\n19.00\n20.30",
+        "PW 4. ? R 20\nProjektwoche (HIP) | 9)",
+        "",
+        "",
+        "",
+        "",
+        null
+      ],
+      [
+        "Name Langname\nBRW V Baurecht und Bauwirtschaft Vorlesung\nBRW Ü Baurecht und Bauwirtschaft Übung",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ]
+  }
+]
