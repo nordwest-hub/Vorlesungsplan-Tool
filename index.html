@@ -324,11 +324,11 @@
     </div>
     <div class="form-group">
       <label for="start">Startzeit</label>
-      <input type="time" id="start" value="08:00">
+      <input type="time" id="start" value="08:10">
     </div>
     <div class="form-group">
       <label for="end">Endzeit</label>
-      <input type="time" id="end" value="09:30">
+      <input type="time" id="end" value="09:40">
     </div>
     <div class="form-group">
       <label for="room">Raum</label>
@@ -523,35 +523,42 @@ function buildTimetable() {
     return div;
   }
 
-  for (let block = 1; block <= 7; block++) {
-    const [blockStart, blockEnd] = DEFAULT_BLOCK_TIMES[block];
+  // Dynamische Zeitraster: Standardblöcke + eigene Slots für Kurse außerhalb
+  const slots = Object.values(DEFAULT_BLOCK_TIMES).map(([s, e]) => ({
+    start: timeToMinutes(s), end: timeToMinutes(e), label: `${s} – ${e}`
+  }));
+  // Für manuell hinzugefügte Kurse: falls Startzeit in keinem Block liegt, eigenen Slot anlegen
+  courses.forEach(course => {
+    if (course._generated) return;
+    const cs = timeToMinutes(course.start);
+    const ce = timeToMinutes(course.end);
+    const startInSlot = slots.some(sl => cs >= sl.start && cs < sl.end);
+    if (!startInSlot && !slots.some(sl => Math.abs(sl.start - cs) < 5)) {
+      slots.push({ start: cs, end: ce, label: `${course.start} – ${course.end}` });
+    }
+  });
+  slots.sort((a, b) => a.start - b.start);
+
+  slots.forEach((slot, slotIdx) => {
     const tr = document.createElement('tr');
 
     const timeTd = document.createElement('td');
     timeTd.className = 'time-col';
-    timeTd.textContent = `${blockStart} - ${blockEnd}`;
+    timeTd.textContent = slot.label;
     tr.appendChild(timeTd);
 
-    const rangeStart = timeToMinutes(blockStart);
+    const rangeStart = slot.start;
 
     for (let day = 0; day < 5; day++) {
-      if (skip[day][block]) continue;
+      if (skip[day][slotIdx]) continue;
 
       const td = document.createElement('td');
       td.className = 'day-cell';
 
-      // Alle noch nicht platzierten Termine dieses Tages sammeln, die genau
-      // hier beginnen oder direkt an einen bereits gefundenen Termin
-      // anschließen - so können mehrere aneinander anschließende Termine
-      // dasselbe Rasterfeld teilen.
       let group = [];
-      let rangeEnd = rangeStart;
+      let rangeEnd = slot.end;
       let span = 1;
 
-      // Kurse aus dem Vorlesungsplan (PDF/Stundenplan-Algorithmus) belegen
-      // einen Block immer exklusiv - nur manuell hinzugefügte Termine
-      // (Punkt 3) dürfen sich ein Rasterfeld teilen, wenn sie aneinander
-      // anschließen.
       const generatedStart = courses.find((course, index) =>
         !assigned[index] && course.day === day && course._generated &&
         timeToMinutes(course.start) === rangeStart
@@ -563,10 +570,9 @@ function buildTimetable() {
         group.push({ course: generatedStart, index, cs, ce });
         assigned[index] = true;
         rangeEnd = ce;
-        for (let b = block; b <= 7; b++) {
-          const [, be] = DEFAULT_BLOCK_TIMES[b];
-          span = b - block + 1;
-          if (timeToMinutes(be) >= rangeEnd) break;
+        for (let b = slotIdx; b < slots.length; b++) {
+          span = b - slotIdx + 1;
+          if (slots[b].end >= rangeEnd) break;
         }
       } else {
         let changed = true;
@@ -575,27 +581,23 @@ function buildTimetable() {
           courses.forEach((course, index) => {
             if (assigned[index] || course.day !== day || course._generated) return;
             const cs = timeToMinutes(course.start);
-            if (cs >= rangeStart && cs < rangeEnd + 1 && cs <= rangeEnd) {
-              group.push({ course, index, cs, ce: timeToMinutes(course.end) });
+            const ce = timeToMinutes(course.end);
+            if (cs >= rangeStart && cs <= rangeEnd) {
+              group.push({ course, index, cs, ce });
               assigned[index] = true;
               changed = true;
-              if (timeToMinutes(course.end) > rangeEnd) rangeEnd = timeToMinutes(course.end);
+              if (ce > rangeEnd) rangeEnd = ce;
             }
           });
-          // Spanne auf volle Blöcke runden, damit rowSpan zu den Zeilen passt
           let newSpan = 1;
-          for (let b = block; b <= 7; b++) {
-            const [, be] = DEFAULT_BLOCK_TIMES[b];
-            newSpan = b - block + 1;
-            if (timeToMinutes(be) >= rangeEnd) break;
+          for (let b = slotIdx; b < slots.length; b++) {
+            newSpan = b - slotIdx + 1;
+            if (slots[b].end >= rangeEnd) break;
           }
           if (newSpan !== span) {
             span = newSpan;
-            const [, lastBe] = DEFAULT_BLOCK_TIMES[Math.min(block + span - 1, 7)];
-            if (timeToMinutes(lastBe) > rangeEnd) {
-              rangeEnd = timeToMinutes(lastBe);
-              changed = true;
-            }
+            const lastEnd = slots[Math.min(slotIdx + span - 1, slots.length - 1)].end;
+            if (lastEnd > rangeEnd) { rangeEnd = lastEnd; changed = true; }
           }
         }
       }
@@ -632,8 +634,8 @@ function buildTimetable() {
 
       if (span > 1) {
         td.rowSpan = span;
-        for (let b = block + 1; b < block + span; b++) {
-          if (b <= 7) skip[day][b] = true;
+        for (let b = slotIdx + 1; b < slotIdx + span; b++) {
+          if (b < slots.length) skip[day][b] = true;
         }
       }
 
@@ -641,7 +643,7 @@ function buildTimetable() {
     }
 
     tbody.appendChild(tr);
-  }
+  });
 
   // Alle Zeilen auf die gleiche Rastergröße bringen, damit jeder
   // Vorlesungsblock gleich groß dargestellt wird und die proportionale
@@ -845,6 +847,19 @@ function groupItemsToLines(items) {
   return lines;
 }
 
+// Extrahiert den Vertiefungsnamen aus der Seitenüberschrift, z.B.
+// "B6B1 6. Sem Baubetrieb Gr. 1" → "Baubetrieb"
+function extractVertiefung(lines, headerLine) {
+  const titleLines = lines.filter(l => l.y > headerLine.y);
+  const text = titleLines.flatMap(l => l.parts.map(p => p.text)).join(' ');
+  const m = text.match(/\d+\.\s*Sem\s+(.+?)(?:\s+Gr\..*)?$/i);
+  if (!m) return null;
+  const name = m[1].trim();
+  // Nur ab 5. Semester gibt es Vertiefungen — kürzere generische Namen herausfiltern
+  if (/^(Dual|Praxis|Regular|Regelstudium)$/i.test(name)) return null;
+  return name;
+}
+
 // Erkennt die Tabelle einer Seite und liefert eine Liste von Kurseinträgen
 function parseTimetablePage(items) {
   const lines = groupItemsToLines(items);
@@ -854,6 +869,8 @@ function parseTimetablePage(items) {
     dayNames.every(day => line.parts.some(p => p.text === day))
   );
   if (!headerLine) return [];
+
+  const vertiefung = extractVertiefung(lines, headerLine);
 
   const dayX = {};
   headerLine.parts.forEach(p => {
@@ -931,6 +948,7 @@ function parseTimetablePage(items) {
           start,
           end,
           room: c.room + (c.note ? ` (${c.note})` : ''),
+          vertiefung: vertiefung || null,
           selected: false
         });
       });
@@ -986,7 +1004,7 @@ function dedupeFound(list) {
   const seen = new Set();
   const result = [];
   list.forEach(c => {
-    const key = `${c.name}|${c.group || ''}|${c.day}|${c.start}|${c.end}|${c.room}`;
+    const key = `${c.vertiefung || ''}|${c.name}|${c.group || ''}|${c.day}|${c.start}|${c.end}|${c.room}`;
     if (seen.has(key)) return;
     seen.add(key);
     result.push(c);
@@ -1209,18 +1227,35 @@ function renderCourseSelection() {
   const courseLangnames = loadCourseLangnames();
   const lecturerNames = loadLecturerNames();
 
+  // Kursgruppen aufbauen: key = Name|Gruppe, Vertiefung vom ersten Eintrag übernehmen
   const courseMap = new Map();
   list.forEach((item, index) => {
-    const key = `${item.name}|${item.group || ''}`;
+    const key = `${item.vertiefung || ''}|${item.name}|${item.group || ''}`;
     if (!courseMap.has(key)) {
-      courseMap.set(key, { name: item.name, group: item.group || '', indices: [], selected: !!item.selected });
+      courseMap.set(key, { name: item.name, group: item.group || '', vertiefung: item.vertiefung || null, indices: [], selected: !!item.selected });
     }
     const entry = courseMap.get(key);
     entry.indices.push(index);
     if (item.selected) entry.selected = true;
+    if (!entry.vertiefung && item.vertiefung) entry.vertiefung = item.vertiefung;
   });
 
+  // Nach Vertiefung gruppieren, dann alphabetisch sortieren
+  const groups = new Map();
   courseMap.forEach(course => {
+    const key = course.vertiefung || '';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(course);
+  });
+
+  // Vertiefungen sortieren: zuerst ohne Vertiefung, dann alphabetisch
+  const sortedGroups = [...groups.keys()].sort((a, b) => {
+    if (!a) return -1;
+    if (!b) return 1;
+    return a.localeCompare(b, 'de');
+  });
+
+  function buildCourseRow(course) {
     const row = document.createElement('div');
     row.className = 'course-row';
     row.style.minWidth = '0';
@@ -1244,7 +1279,7 @@ function renderCourseSelection() {
 
     if (course.group) {
       const lecturer = document.createElement('span');
-      lecturer.style.color = '#7f8c8d';
+      lecturer.style.color = '#d35400';
       lecturer.style.flex = '1';
       const lecturerFullname = lecturerNames[course.group];
       lecturer.textContent = lecturerFullname ? `${lecturerFullname} (${course.group})` : course.group;
@@ -1252,13 +1287,23 @@ function renderCourseSelection() {
     }
 
     const info = document.createElement('span');
-    info.style.color = '#7f8c8d';
+    info.style.color = '#d35400';
     info.style.fontSize = '0.85em';
     const n = course.indices.length;
-    info.textContent = n === 1 ? '1 Termin verfügbar' : `${n} Termine verfügbar`;
+    info.textContent = n === 1 ? '1 Termin' : `${n} Termine`;
     row.appendChild(info);
 
-    container.appendChild(row);
+    return row;
+  }
+
+  sortedGroups.forEach(groupKey => {
+    if (groupKey) {
+      const heading = document.createElement('div');
+      heading.style.cssText = 'font-weight:bold; color:#A6093D; padding:8px 10px 4px; font-size:0.95em; border-top:2px solid #A6093D; margin-top:6px;';
+      heading.textContent = groupKey;
+      container.appendChild(heading);
+    }
+    groups.get(groupKey).forEach(course => container.appendChild(buildCourseRow(course)));
   });
 
   if (courseMap.size === 0) {
