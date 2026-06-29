@@ -465,7 +465,7 @@ function overlap(a, b) {
 // Basisbezeichnung eines Kurses ohne den abschließenden Vorlesung/Übung-Typ
 // (z.B. "BRW V" und "BRW Ü" -> "BRW"), damit beide dieselbe Farbe erhalten.
 function courseBaseName(name) {
-  return (name || '').replace(/\s+[VÜ]\.?$/, '').trim();
+  return (name || '').replace(/\s+[VÜ](?:\/Ü)?\.?$/, '').trim();
 }
 
 function minutesToTime(m) {
@@ -749,8 +749,8 @@ const DEFAULT_BLOCK_TIMES = {
 };
 
 // Erkennt einen einzelnen Kurseintrag in einer Zelle, z.B. "DPB V. Br R 216"
-const CELL_ENTRY_PATTERN = /^(\S+(?:\s+\d+)?)\s+([VÜ])\.?\s*(\S+)\s+(R\s*\S+)$/;
-const CELL_ENTRY_WITH_FOOTNOTE_PATTERN = /^(\S+(?:\s+\d+)?)\s+([VÜ])\.?\s*(\S+)\s+(R\s*\S+)\s+(\d+\))$/;
+const CELL_ENTRY_PATTERN = /^(\S+(?:\s+\d+)?)\s+([VÜ](?:\/Ü)?)\.?\s*(\S+)\s+(\S+(?:\s+\S+)?)$/;
+const CELL_ENTRY_WITH_FOOTNOTE_PATTERN = /^(\S+(?:\s+\d+)?)\s+([VÜ](?:\/Ü)?)\.?\s*(\S+)\s+(\S+(?:\s+\S+)?)\s+(\d+\))$/;
 const FOOTNOTE_LINE_PATTERN = /^\d+\)$/;
 const BLOCK_NUMBER_PATTERN = /^[1-7]$/;
 const TIME_FRAGMENT_PATTERN = /^\d{1,2}[.\-]\d{1,2}-?\d{0,2}$/;
@@ -765,28 +765,57 @@ function normalizeTime(raw) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+// Erkennt einen unvollständigen Kurseintrag der Form "SFB V." oder "SFB V"
+// (nur Name + Typ, ohne Dozent und Raum) — passiert wenn PDF-Zeilen aufgeteilt sind
+const PARTIAL_COURSE_PATTERN = /^(\S+(?:\s+\d+)?)\s+([VÜ](?:\/Ü)?)\.?$/;
+// Erkennt eine Dozent+Raum-Zeile die zu einem vorherigen Partial-Eintrag gehört
+const LECTURER_ROOM_PATTERN = /^(\S+)\s+(\S+(?:\s+\S+)?)$/;
+
 // Zerlegt den Text einer Tageszelle in einzelne Kurs-Einträge
 function parseCellLines(cellLines) {
   const entries = [];
+  let pendingPartial = null;
   cellLines.forEach(line => {
     line = line.trim();
+    if (!line) return;
+    // Inline-Anmerkungen und Garbage-Ziffernfolgen vor dem Matching entfernen
+    line = line.replace(/\s+n\.\s*bes\.\s*Plan[^)]*\d*\)?/i, '').replace(/\s+\d{8,}[^)]*/, '').trim();
     if (!line) return;
 
     if (FOOTNOTE_LINE_PATTERN.test(line)) {
       if (entries.length > 0) entries[entries.length - 1].footnote = line;
+      pendingPartial = null;
       return;
     }
 
     let m = line.match(CELL_ENTRY_WITH_FOOTNOTE_PATTERN);
     if (m) {
-      entries.push({ name: m[1], type: m[2], lecturer: m[3], room: m[4].replace(/\s+/g, ''), footnote: m[5], note: null });
+      pendingPartial = null;
+      entries.push({ name: m[1], type: m[2], lecturer: m[3], room: m[4].replace(/\s+/g, ' ').trim(), footnote: m[5], note: null });
       return;
     }
 
     m = line.match(CELL_ENTRY_PATTERN);
     if (m) {
-      entries.push({ name: m[1], type: m[2], lecturer: m[3], room: m[4].replace(/\s+/g, ''), footnote: null, note: null });
+      pendingPartial = null;
+      entries.push({ name: m[1], type: m[2], lecturer: m[3], room: m[4].replace(/\s+/g, ' ').trim(), footnote: null, note: null });
       return;
+    }
+
+    // Aufgeteilte Zeilen: erst "SFB V." dann "Or R 213" auf nächster Zeile
+    m = line.match(PARTIAL_COURSE_PATTERN);
+    if (m) {
+      pendingPartial = { name: m[1], type: m[2] };
+      return;
+    }
+    if (pendingPartial) {
+      const lm = line.match(LECTURER_ROOM_PATTERN);
+      if (lm) {
+        entries.push({ name: pendingPartial.name, type: pendingPartial.type, lecturer: lm[1], room: lm[2].replace(/\s+/g, ' ').trim(), footnote: null, note: null });
+        pendingPartial = null;
+        return;
+      }
+      pendingPartial = null;
     }
 
     if (entries.length > 0) {
@@ -837,7 +866,7 @@ function parseTimetablePage(items) {
   function columnForX(x) {
     if (x < timeColEnd) return 'time';
     for (let i = 0; i < sortedDays.length - 1; i++) {
-      const boundary = (dayX[sortedDays[i]] + dayX[sortedDays[i + 1]]) / 2;
+      const boundary = dayX[sortedDays[i + 1]] - colWidth * 0.35;
       if (x < boundary) return sortedDays[i];
     }
     return sortedDays[sortedDays.length - 1];
@@ -916,7 +945,7 @@ function parseTimetablePage(items) {
 // - courseLangnames: Map Kursname -> ausgeschriebener Name
 // - lecturerNames: Map Dozentenkürzel -> ausgeschriebener Name
 // Einträge ohne "V"/"Ü"-Kürzel sind Lehrende.
-const LEGEND_COURSE_PATTERN = /^(\S+(?:\s+\d+)?\s+[VÜ])\.?(?:\s|$)/;
+const LEGEND_COURSE_PATTERN = /^(\S+(?:\s+\d+)?\s+[VÜ](?:\/Ü)?)\.?(?:\s|$)/;
 
 function extractLegendInfo(items) {
   const lines = groupItemsToLines(items);
